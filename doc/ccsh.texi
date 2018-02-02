@@ -1,0 +1,272 @@
+\input texinfo.tex
+@c %**start of header
+@setfilename ccsh.info
+@settitle CCSh
+@c %**end of header
+
+@include version.texi
+@include macros.texi
+
+@c page
+@c ------------------------------------------------------------
+@c Values.
+@c ------------------------------------------------------------
+
+@set TITLE                      CCSh
+
+@c To be used as @value{PACKAGE} whenever we need to include the full
+@c name of this package.
+@set PACKAGE                    CCSh
+
+@c To be used as @value{PACKAGE} whenever we need to include the
+@c nickname of the project: the name that is used to compose the
+@c distribution tarball or the web address.
+@set PACKAGE_NICKNAME           ccsh
+
+@c To be used as @value{AUTHOR} whenever we need to include the list of
+@c authors of this document.
+@set AUTHOR                     Marco Maggi
+
+@c To be used as @value{AUTHOR_EMAIL} whenever we need to include the
+@c email of the *single* author of this document.
+@set AUTHOR_EMAIL               @email{marco.maggi-ipsu@@poste.it}
+
+@c To be used as @value{COPYRIGHT_YEARS} whenever we need to include the
+@c list of copyright years.
+@set COPYRIGHT_YEARS            2018
+
+@c ------------------------------------------------------------
+
+@set GITHUB_URL                 @url{https://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
+@set BITBUCKET_URL              @url{https://bitbucket.org/marcomaggi/@value{PACKAGE_NICKNAME}}
+@set DOWNLOAD_URL               @url{https://bitbucket.org/marcomaggi/@value{PACKAGE_NICKNAME}/downloads}
+@set DOCUMENTATION_URL          @url{https://marcomaggi.github.io/docs/@value{PACKAGE_NICKNAME}.html}
+
+@c page
+@c ------------------------------------------------------------
+@c Copyright notice.
+@c ------------------------------------------------------------
+
+@copying
+This document describes version @value{VERSION} of @value{PACKAGE}, a @gnu{} Bash script that allows
+the use of C language programs as shell scripts.
+
+The package is distributed under the terms of the @gnu{} General Public License (@gpl{}).
+
+The latest release can be downloaded from:
+
+@center @value{DOWNLOAD_URL}
+
+@noindent
+development takes place at:
+
+@center @value{GITHUB_URL}
+
+@noindent
+and as backup at:
+
+@center @value{BITBUCKET_URL}
+
+@noindent
+Copyright @copyright{} @value{COPYRIGHT_YEARS} by @value{AUTHOR} @value{AUTHOR_EMAIL}
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document under the terms of the @gnu{}
+Free Documentation License, Version 1.3 or any later version published by the Free Software
+Foundation; with Invariant Sections being ``@gnu{} Free Documentation License'' and ``@gnu{} General
+Public License'', no Front--Cover Texts, and no Back--Cover Texts.  A copy of the license is
+included in the section entitled ``@gnu{} Free Documentation License''.
+@end quotation
+@end copying
+
+@c page
+@c ------------------------------------------------------------
+@c Headers.
+@c ------------------------------------------------------------
+
+@titlepage
+@title @value{TITLE}
+@subtitle Revision @value{VERSION}
+@author @value{AUTHOR} @value{AUTHOR_EMAIL}
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@c ------------------------------------------------------------
+
+@ifinfo
+@dircategory Development
+@direntry
+* ccsh: (ccsh).                 CCSh a C language scripts launcher.
+@end direntry
+@end ifinfo
+
+@c page
+@ifnottex
+@node Top
+@top @value{TITLE}
+
+@insertcopying
+
+@menu
+* overview::                    Overview of the package.
+* using::                       Using the script.
+* binfmt::                      Binfmt support.
+
+Appendices
+
+* Package License::             GNU General Public License.
+* Documentation License::       GNU Free Documentation License.
+* references::                  Bibliography and references.
+
+Indexes
+
+* concept index::               An entry for each concept.
+@end menu
+@end ifnottex
+
+@c page
+@node overview
+@chapter Overview of the package
+
+
+This document describes version @value{VERSION} of @value{PACKAGE}, a @gnu{} Bash script that allows
+the use of C language programs as shell scripts.  This package targets only @gnu{}+Linux platforms.
+
+The package installs the script @command{ccsh} that compiles and runs C language source files.  By
+default it makes use of the @command{gcc} compiler configured to use the C11 standard language;
+before installation, we can edit the script itself to change its behaviour.
+
+In addition, the package installs a script @command{rc.ccsh} under a system directory like:
+
+@center @file{/usr/local/etc/rc.d/}
+
+@noindent
+which enables @code{binfmt_misc} support for @value{PACKAGE}.
+
+@c page
+@node using
+@chapter Using the script
+
+
+Synopsis:
+
+@example
+ccsh @var{sourcefile} [script options]
+@end example
+
+@noindent
+it is suggested to just use the extension @code{.c} for source files.
+
+@c page
+@node binfmt
+@chapter Binfmt support
+
+
+@value{PACKAGE} installs a script:
+
+@center @file{$sysconfdir/rc.d/rc.ccsh}
+
+@noindent
+that automates the feature control.  It is a shell script (@file{/bin/sh}) to be executed to enable
+or disable the feature.  Just running it enables @code{binfmt_misc} support.
+
+We might want to add the invocation of @file{rc.ccsh} in one of the shell scripts that are executed
+at system boot time; for example, on a Slackware Linux system we can use @file{/etc/rc.d/rc.local}
+by inserting this code:
+
+@example
+if [ -x "$sysconfdir/rc.d/rc.ccsh" ]; then
+   "$sysconfdir/rc.d/rc.ccsh"
+fi
+@end example
+
+The script @file{rc.ccsh} implements @code{binfmt_misc} support by adding a record to the register
+for source files with name @code{CCSH_SCRIPTS}.  @file{rc.ccsh} does the following:
+
+@enumerate
+@item
+Verify if the @code{binfmt_misc} kernel module has been loaded by testing the existence of the
+@file{register} file; if the module is not there, nothing happens.
+
+@item
+Remove the configuration from the registry if it is already there; this is done by testing the
+existence of the special file:
+
+@example
+/proc/sys/fs/binfmt_misc/CCSH_SCRIPTS
+@end example
+
+@noindent
+echoing @code{-1} in them removes the records.
+
+@item
+Echo the records into the registry with the following fields for source scripts:
+
+@table @code
+@item CCSH_SCRIPTS
+It is the name of the special file representing the record in the registry.
+
+@item M
+Activates first bytes recognition.
+
+@item 0
+The offset of the magic string into the file.
+
+@item /* ccsh
+The magic string itself.
+
+@item $bindir/ccsh
+The full pathname to the scripts launcher.
+@end table
+@end enumerate
+
+The @code{mask} field is set to the empty string, that is: no mask is applied and the @code{magic}
+is matched literally.
+
+We have to care about the order of added entries: entries added later are matched first.
+
+@c page
+@c ------------------------------------------------------------
+@c Appendices.
+@c ------------------------------------------------------------
+
+@include gpl-3.0.texi
+@include fdl-1.3.texi
+
+@c page
+@node references
+@appendix Bibliography and references
+
+
+The documentation of @value{PACKAGE} is available online:
+
+@center @value{DOCUMENTATION_URL}
+
+@noindent
+the latest release of this package can be downloaded from:
+
+@center @value{DOWNLOAD_URL}
+
+@noindent
+development takes place at:
+
+@center @value{GITHUB_URL}
+
+@noindent
+and as backup at:
+
+@center @value{BITBUCKET_URL}
+
+@c page
+@node concept index
+@appendix An entry for each concept
+
+@printindex cp
+
+@contents
+@bye
+
+@c end of file
+

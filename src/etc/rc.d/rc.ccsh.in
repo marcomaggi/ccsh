@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# Setup the  Linux module  "binfmt_misc" to automatically  recognise and
+# run CCSh scripts.
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+SCRIPT_MAGIC='/* ccsh'
+
+### --------------------------------------------------------------------
+
+ccsh_binfmt_support_start () {
+    if test -f /proc/sys/fs/binfmt_misc/register
+    then
+	if test -f /proc/sys/fs/binfmt_misc/CCSH_SCRIPTS
+	then echo -1 >/proc/sys/fs/binfmt_misc/CCSH_SCRIPTS
+	fi
+	echo -n 'enabling binfmt CCSh source scripts execution... '
+	echo \
+	    ":CCSH_SCRIPTS:M:0:${SCRIPT_MAGIC}::${bindir}/ccsh:" \
+	    >/proc/sys/fs/binfmt_misc/register
+	echo done
+    else
+	echo 'rc.ccsh: binfmt support not available'
+    fi
+}
+
+ccsh_binfmt_support_stop () {
+    if test -f /proc/sys/fs/binfmt_misc/register
+    then
+	echo 'rc.ccsh: disabling binfmt support'
+	if test -f /proc/sys/fs/binfmt_misc/CCSH_SCRIPTS
+	then echo -1 >/proc/sys/fs/binfmt_misc/CCSH_SCRIPTS
+	fi
+    else
+	echo 'rc.ccsh: binfmt support not available'
+    fi
+}
+
+ccsh_binfmt_support_restart () {
+    ccsh_binfmt_support_stop
+    ccsh_binfmt_support_start
+}
+
+### --------------------------------------------------------------------
+
+case "$1" in
+    'start')
+	ccsh_binfmt_support_start
+	;;
+    'stop')
+	ccsh_binfmt_support_stop
+	;;
+    'restart')
+	ccsh_binfmt_support_restart
+	;;
+    *)
+	ccsh_binfmt_support_restart
+	;;
+esac
+
+### end of file

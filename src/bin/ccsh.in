@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Using C programs as shell scripts.
+
+declare -r COMPILER=@COMPILER@
+declare -r CCSH_FLAGS='-std=c11 -Wall -O2'
+declare -r CCSH_CPPFLAGS=${CCSH_CPPFLAGS}
+declare -r CCSH_LDFLAGS=${CCSH_LDFLAGS}
+declare -r CCSH_CFLAGS=${CCSH_CFLAGS}
+
+# Remember that, on some systems, $TMPDIR is a directory on a noexec
+# partition.  So here we need a temporary directory in which we can
+# create executable programs.
+#
+declare -r EXEC_TMPDIR=${EXEC_TMPDIR:=~/var/tmp}
+
+declare -r PROGNAME="$EXEC_TMPDIR"/ccsh.$$
+trap "/bin/rm --force $PROGNAME" EXIT
+
+declare -r SOURCEFILE=$1
+shift
+
+#set -x
+
+if ! "$COMPILER" $CCSH_FLAGS $CCSH_CPPFLAGS $CCSH_LDFLAGS $CCSH_CFLAGS -o "$PROGNAME" "$SOURCEFILE" &>~/.CCSH-errors
+then
+    printf 'ccsh: error: cannot compile "%s"\n' "$SOURCEFILE" >&2
+    exit 2
+fi
+
+if ! /bin/chmod 0700 "$PROGNAME" &>>~/.CCSH-errors
+then
+    printf 'ccsh: error: cannot compile "%s"\n' "$SOURCEFILE" >&2
+    exit 2
+fi
+
+# Here we do not use exec, so that the trap command will be executed.
+#
+"$PROGNAME" "$@"
+
+### end of file
