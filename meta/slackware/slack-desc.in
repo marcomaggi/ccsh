@@ -1,8 +1,8 @@
               |-----handy-ruler-----------------------------------------------|
 @PACKAGE_NAME@: @PACKAGE_NAME@ @PACKAGE_VERSION@
 @PACKAGE_NAME@:
-@PACKAGE_NAME@: Template of C language library.
-@PACKAGE_NAME@:
+@PACKAGE_NAME@: This package installs a GNU Bash shell script that allows the
+@PACKAGE_NAME@: use of C language programs as shell scripts.
 @PACKAGE_NAME@:
 @PACKAGE_NAME@:
 @PACKAGE_NAME@:
